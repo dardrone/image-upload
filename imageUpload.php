@@ -24,16 +24,7 @@ class Image implements iFile
     private $crop_x;
     private $crop_y;
 
-    public function __construct()
-    {
-        $a = func_get_args();
-        $i = func_num_args();
-        if (method_exists($this, $f = '__construct' . $i)) {
-            call_user_func_array(array($this, $f), $a);
-        }
-    }
-
-    public function __construct3($_FILE, $crop_x = null, $crop_y = null)
+    public function __construct($_FILE, $crop_x = null, $crop_y = null)
     {
         $this->name = $_FILE['name'];
         $this->tmpName = $_FILE['tmp_name'];
@@ -42,14 +33,6 @@ class Image implements iFile
         $this->extension = pathinfo($_FILE['name'], PATHINFO_EXTENSION);
         $this->crop_x = $crop_x;
         $this->crop_y = $crop_y;
-    }
-
-    public function __construct4($name, $tmp_name, $type, $error)
-    {
-        $this->name = $name;
-        $this->tmpName = $tmp_name;
-        $this->type = $type;
-        $this->error = $error;
     }
 
     public function getName()
@@ -180,9 +163,10 @@ function main()
 {
     $uploads_dir = 'images/';
 
+    /** e.g. imageUpload.php?c_x=1200&c_y=1200 */
     foreach ($_FILES as $file) {
         if (isImage($file['type'])) {
-            $image = new Image($file, $_GET['c_x'], $_GET['c_y']); /** e.g. imageUpload.php?c_x=1200&c_y=1200 */
+            $image = new Image($file, $_GET['c_x'], $_GET['c_y']);
             return uploadImages($image, $uploads_dir);
         } else {
             return 'Sorry, I only accept png\'s and jpegs!';
