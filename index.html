@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/dropzone.css">
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet"
           integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/2.3.2/cropper.min.css">
 </head>
 <body>
 <!--[if lt IE 8]>
@@ -26,7 +25,10 @@
 
         <p class="text-muted">.jpg or .png</p>
 
-        <form id="image-dropzone" action="imageUpload.php" class="dropzone"></form>
+        <form id="image-dropzone" action="imageUpload.php" class="dropzone">
+            <input type="hidden" name="crop_x" value="0">
+            <input type="hidden" name="crop_y" value="0">
+        </form>
     </div>
     <div class="col-sm-3"></div>
 </div>
@@ -35,34 +37,110 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
         integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
         crossorigin="anonymous"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/cropper/2.3.2/cropper.min.js"></script>
+
 <script type="text/javascript">
     Dropzone.autoDiscover = false;
     $(function () {
-        var dz = new Dropzone("#image-dropzone", { autoProcessQueue: false, acceptedFiles: "image/png, image/jpeg"});
+
+        var dz = new Dropzone("#image-dropzone", {autoProcessQueue: false, acceptedFiles: "image/png, image/jpeg"});
+
+        /**
+         *  Dropzone.js Callbacks
+         */
 
         dz.on("addedfile", function (file) {
-            if(file.height / file.width === 1.0){
-                this.options.processQueue();
-                this.options.autoProcessQueue = true;
-            }
+            this.options.autoProcessQueue = false;
+
+            // Wait for File attributes to be ready
+            setTimeout(function () {
+                /**
+                 *  Format url params based on their existence.
+                 */
+                if (dz.options.url.indexOf('c_x=') === -1) {
+                    dz.options.url = dz.options.url + '?c_x=' + file.width + '&c_y=' + file.height;
+                } else {
+                    dz.options.url.replace(/c_x=[0-9]*/, 'c_x=' + file.width).replace(/c_y=[0-9]*/, 'c_y=' + file.height);
+                }
+
+                /**
+                 * If the file isn't a square, suggest cropping.
+                 */
+                if (file.height / file.width === 1.0) {
+                    dz.processQueue();
+                    dz.options.autoProcessQueue = true;
+                } else {
+                    $('#crop-form input[name="cx"]').val(file.width);
+                    $('#crop-form input[name="cy"]').val(file.height);
+                    $('#cropModal').modal('show');
+                }
+            }, 50);
+
+        });
+
+
+        /**
+         *  Listeners
+         */
+
+        var image_x, image_y = 0;
+
+        $('#cropModal').on('shown.bs.modal', function () {
+            // Save unedited values
+            image_x = $('#crop-form').find('input[name="cx"]').val();
+            image_y = $('#crop-form').find('input[name="cy"]').val();
+        });
+
+        $('#cropModal').on('hide.bs.modal', function () {
+            dz.processQueue();
+            dz.options.autoProcessQueue = true;
+        });
+
+        $('#crop-dismiss').on('click', function () {
+            // Don't use edited image attributes, pass in original height/width
+            dz.options.url = dz.options.url.replace(/c_x=[0-9]*/, 'c_x=' + image_x).replace(/c_y=[0-9]*/, 'c_y=' + image_y);
+            $('#cropModal').modal('hide');
+        });
+
+        $('#crop-confirm').on('click', function () {
+            // Get latest input and crop it!
+            var cx = $('#crop-form').find('input[name="cx"]').val();
+            var cy = $('#crop-form').find('input[name="cy"]').val();
+            dz.options.url = dz.options.url.replace(/c_x=[0-9]*/, 'c_x=' + cx).replace(/c_y=[0-9]*/, 'c_y=' + cy);
+            $('#cropModal').modal('hide');
         });
     });
 
 </script>
 
-<!-- Edit Image Modal -->
-<div class="modal fade" id="cropModal" role="dialog" aria-labelledby="cropModalLabel">
+<!-- Crop Modal -->
+<div class="modal fade" id="cropModal" role="dialog" data-backdrop="static" aria-labelledby="cropModalLabel">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
             </div>
             <div class="modal-body">
-                <p>The image is not square, would you like to crop it in the middle?</p>
+                <p>The image is not square, would you like to attempt to crop it?</p>
+
+                <form id="crop-form" class="form-horizontal">
+                    <div class="form-group">
+                        <label for="crop_x" class="col-sm-2 control-label">X</label>
+
+                        <div class="col-sm-8">
+                            <input class="form-control" type="text" name="cx" id="crop_x" value="0"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="crop_y" class="col-sm-2 control-label">Y</label>
+
+                        <div class="col-sm-8">
+                            <input class="form-control" type="text" name="cy" id="crop_y" value="0"/>
+                        </div>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-success" id="crop-confirm">Confirm</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="crop-confirm">Crop</button>
+                <button type="button" class="btn btn-default" id="crop-dismiss" data-dismiss="modal">Don't Crop</button>
             </div>
         </div>
     </div>

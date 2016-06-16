@@ -21,6 +21,8 @@ class Image implements iFile
     private $type;
     private $error;
     private $extension;
+    private $crop_x;
+    private $crop_y;
 
     public function __construct()
     {
@@ -31,13 +33,15 @@ class Image implements iFile
         }
     }
 
-    public function __construct1($_FILE)
+    public function __construct3($_FILE, $crop_x = null, $crop_y = null)
     {
         $this->name = $_FILE['name'];
         $this->tmpName = $_FILE['tmp_name'];
         $this->type = $_FILE['type'];
         $this->error = $_FILE['error'];
         $this->extension = pathinfo($_FILE['name'], PATHINFO_EXTENSION);
+        $this->crop_x = $crop_x;
+        $this->crop_y = $crop_y;
     }
 
     public function __construct4($name, $tmp_name, $type, $error)
@@ -71,6 +75,16 @@ class Image implements iFile
     public function getExtension()
     {
         return $this->extension;
+    }
+
+    public function getCropX()
+    {
+        return $this->crop_x;
+    }
+
+    public function getCropY()
+    {
+        return $this->crop_y;
     }
 }
 
@@ -115,7 +129,7 @@ function uploadImages(Image $image, $directory)
 function uploadImageToDirectoryAsJPEG(Image $image, $directory, $w, $h)
 {
     $dst_img = convertToTrueColorAndResizeImage($image, $w, $h);
-    $newImageName = rtrim(basename($image->getName(), $image->getExtension()),'.') . '_'. $w . '.jpg';
+    $newImageName = rtrim(basename($image->getName(), $image->getExtension()), '.') . '_' . $w . '.jpg';
     imagejpeg($dst_img, $directory . $newImageName, 90);
     imagedestroy($dst_img);
 }
@@ -131,16 +145,30 @@ function convertToTrueColorAndResizeImage(Image $image, $w, $h)
 {
     $path = $image->getTmpName();
 
-    if ($image->getType() === 'image/png') {
+    if ($image->getType() == 'image/png') {
         $sourceImage = imagecreatefrompng($path);
-    } elseif ($image->getType() === 'image/jpeg') {
+    } elseif ($image->getType() == 'image/jpeg') {
         $sourceImage = imagecreatefromjpeg($path);
     } else {
         throw new Exception("Image is not in preferred format.");
     }
 
+    /* Get size of src image so and use crop
+       coordinates if we have them. */
     list($width, $height) = getimagesize($path);
+    if(!is_null($image->getCropX()) && !is_null($image->getCropY())){
+        list($width, $height) = array($image->getCropX(), $image->getCropY());
+    }
+
     $dstImage = imagecreatetruecolor($w, $h);
+
+    /* Preserve transparency for .png */
+    if($image->getType() == 'image/png') {
+        imagecolortransparent($dstImage, imagecolorallocatealpha($dstImage, 0, 0, 0, 127));
+        imagealphablending($dstImage, false);
+        imagesavealpha($dstImage, true);
+    }
+
     imagecopyresampled($dstImage, $sourceImage, 0, 0, 0, 0, $w, $h, $width, $height);
     return $dstImage;
 }
@@ -154,7 +182,7 @@ function main()
 
     foreach ($_FILES as $file) {
         if (isImage($file['type'])) {
-            $image = new Image($file);
+            $image = new Image($file, $_GET['c_x'], $_GET['c_y']); /** e.g. imageUpload.php?c_x=1200&c_y=1200 */
             return uploadImages($image, $uploads_dir);
         } else {
             return 'Sorry, I only accept png\'s and jpegs!';
