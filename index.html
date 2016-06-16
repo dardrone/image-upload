@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/dropzone.css">
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet"
           integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/2.3.2/cropper.min.css">
 </head>
 <body>
 <!--[if lt IE 8]>
@@ -21,27 +22,51 @@
 <div class="container">
     <div class="col-sm-3"></div>
     <div class="col-sm-6">
-        <h1><i class="fa fa-image"></i> Image Upload</h1><p class="text-muted">.jpg or .png</p>
+        <h1><i class="fa fa-image"></i> Image Upload</h1>
+
+        <p class="text-muted">.jpg or .png</p>
+
         <form id="image-dropzone" action="imageUpload.php" class="dropzone"></form>
     </div>
     <div class="col-sm-3"></div>
 </div>
-
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/min/dropzone.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+        integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+        crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/cropper/2.3.2/cropper.min.js"></script>
 <script type="text/javascript">
     Dropzone.autoDiscover = false;
     $(function () {
-
-        var dz = new Dropzone("#image-dropzone");
+        var dz = new Dropzone("#image-dropzone", { autoProcessQueue: false, acceptedFiles: "image/png, image/jpeg"});
 
         dz.on("addedfile", function (file) {
-            if(!(file.type === 'image/png' || file.type === 'image/jpeg')){
-                dz.removeFile(file);
-                alert('Image must be a png or a jpeg.');
+            if(file.height / file.width === 1.0){
+                this.options.processQueue();
+                this.options.autoProcessQueue = true;
             }
         });
     });
+
 </script>
+
+<!-- Edit Image Modal -->
+<div class="modal fade" id="cropModal" role="dialog" aria-labelledby="cropModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            </div>
+            <div class="modal-body">
+                <p>The image is not square, would you like to crop it in the middle?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="crop-confirm">Confirm</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- -- -->
 </body>
 </html>

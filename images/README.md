@@ -1,1 +1,1 @@
-## images/ folder for where the images go. 
+images/ folder for where the images go. 

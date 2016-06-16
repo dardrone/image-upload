@@ -84,7 +84,8 @@ function isImage($type)
 }
 
 /**
- * Moves an Image from its temporary home to a directory.
+ * Uploads multiple copies of an image and
+ * places them in their new home.
  * @param Image $image
  * @param $directory
  * @return string
@@ -96,7 +97,7 @@ function uploadImages(Image $image, $directory)
         uploadImageToDirectoryAsJPEG($image, $directory, 900, 900);
         uploadImageToDirectoryAsJPEG($image, $directory, 500, 500);
         uploadImageToDirectoryAsJPEG($image, $directory, 180, 180);
-        echo 'All images have finished uploading!';
+        return 'All images have finished uploading!';
     } else {
         throw new Exception("There was an error with your upload!");
     }
@@ -116,6 +117,7 @@ function uploadImageToDirectoryAsJPEG(Image $image, $directory, $w, $h)
     $dst_img = convertToTrueColorAndResizeImage($image, $w, $h);
     $newImageName = rtrim(basename($image->getName(), $image->getExtension()),'.') . '_'. $w . '.jpg';
     imagejpeg($dst_img, $directory . $newImageName, 90);
+    imagedestroy($dst_img);
 }
 
 /**
@@ -153,13 +155,13 @@ function main()
     foreach ($_FILES as $file) {
         if (isImage($file['type'])) {
             $image = new Image($file);
-            echo uploadImages($image, $uploads_dir);
+            return uploadImages($image, $uploads_dir);
         } else {
-            echo 'Sorry, I only accept png\'s and jpgs!';
+            return 'Sorry, I only accept png\'s and jpegs!';
         }
     }
 }
 
-main();
+echo main();
 
 ?>
