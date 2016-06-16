@@ -42,7 +42,7 @@
     Dropzone.autoDiscover = false;
     $(function () {
 
-        var dz = new Dropzone("#image-dropzone", {autoProcessQueue: false, acceptedFiles: "image/png, image/jpeg"});
+        var dz = new Dropzone("#image-dropzone", {autoProcessQueue: false, acceptedFiles: "image/png, image/jpeg",   maxFiles: 1});
 
         /**
          *  Dropzone.js Callbacks
