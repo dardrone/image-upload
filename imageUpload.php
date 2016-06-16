@@ -136,7 +136,7 @@ function convertToTrueColorAndResizeImage(Image $image, $w, $h)
         throw new Exception("Image is not in preferred format.");
     }
 
-    /* Get size of src image so and use crop
+    /* Get size of src image and use crop
        coordinates if we have them. */
     list($width, $height) = getimagesize($path);
     if(!is_null($image->getCropX()) && !is_null($image->getCropY())){
